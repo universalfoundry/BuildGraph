@@ -1,0 +1,33 @@
+<?xml version='1.0' ?>
+<BuildGraph xmlns="http://www.epicgames.com/BuildGraph" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.epicgames.com/BuildGraph ../Schema.xsd" >
+	<Option Name="AgentPlatform" DefaultValue="Win64" Description="The agent platform to use."/>
+
+	<Property Name="HostAgentType" Value="Win64" />
+	<Property Name="HostAgentType" Value="Linux" If="'$(AgentPlatform)' == 'Linux'" />
+	<Property Name="HostAgentType" Value="Mac" If="'$(AgentPlatform)' == 'Mac'" />
+
+	<!-- Agent options -->
+	<Option Name="UseIncrementalAgents" DefaultValue="false" Restrict="true|false" Description="Use incremental agents for building." />
+	<Option Name="AgentPrefixCompile" DefaultValue="Compile" Description="The prefix to use when defining agents that use compile type nodes." />
+	<Option Name="AgentPrefixCook" DefaultValue="Cook" Description="The prefix to use when defining agents that use cook type nodes." />
+	<Option Name="AgentPrefixPackage" DefaultValue="Package" Description="The prefix to use when defining agents that use package type nodes." />
+	<Option Name="AgentPrefixTest" DefaultValue="Test" Description="The prefix to use when defining agents that run tests." />
+	<Option Name="AgentOverride" DefaultValue="" Description="If set, other logic is ignored and this agent type is used for all non-test work." />
+
+	<!-- Set properties for a common set of agent types known to exist in Horde. All jobs will use one of these agent types -->
+	<Property Name="CompileAgentType" Value="$(AgentPrefixCompile)$(HostAgentType)" />
+	<Property Name="CompileAgentType" Value="Incremental$(CompileAgentType)" If="$(UseIncrementalAgents)" />
+	<Property Name="CompileAgentType" Value="$(AgentOverride)" If="'$(AgentOverride)' != ''" />
+
+	<Property Name="CookAgentType" Value="$(AgentPrefixCook)$(HostAgentType)" />
+	<Property Name="CookAgentType" Value="Incremental$(CookAgentType)" If="$(UseIncrementalAgents)" />
+	<Property Name="CookAgentType" Value="$(AgentOverride)" If="'$(AgentOverride)' != ''" />
+
+	<Property Name="PackageAgentType" Value="$(AgentPrefixPackage)$(HostAgentType)" />
+	<Property Name="PackageAgentType" Value="Incremental$(PackageAgentType)" If="$(UseIncrementalAgents)" />
+	<Property Name="PackageAgentType" Value="$(AgentOverride)" If="'$(AgentOverride)' != ''" />
+
+	<!-- Test agents don't have an incremental version, they are expected to pull builds, not create them -->
+	<Property Name="TestAgentType" Value="$(AgentPrefixTest)$(HostAgentType)" />
+	<Property Name="TestAgentType" Value="$(AgentOverride)" If="'$(AgentOverride)' != ''" />
+</BuildGraph>
