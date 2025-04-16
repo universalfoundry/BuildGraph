@@ -18,12 +18,10 @@
 	<Agent Name="Win64 Build Agent" Type="$(CompileAgentType)" If="'$(HostAgentType)' == 'Win64'">
 		<Property Name="UgsInstallerDir" Value="$(RootDir)/Engine/Source/Programs/UnrealGameSync/Installer"/>
 		<Property Name="UgsInstallerPublishDir" Value="$(RootDir)/LocalBuilds/UnrealGameSyncInstaller"/>
-
 		<Property Name="UgsPublishDir" Value="$(UgsOutputDir)"/>
-
 		<Property Name="UgsZipPublishDir" Value="$(UgsZipOutputDir)"/>
 
-  <!-- Windows -->
+		<!-- Windows -->
 		<Node Name="Build UnrealGameSync">
 			<Delete Files="$(UgsOutputDir)/..."/>
 			<DotNet Arguments="publish &quot;$(UgsDir)/UnrealGameSyncCmd/UnrealGameSyncCmd.csproj&quot; --output=&quot;$(UgsPublishDir)&quot; --no-self-contained -c Release -r osx-x64 $(VersionArguments)"/>
@@ -42,19 +40,19 @@
 			<Copy From="$(UgsInstallerDir)/bin/Release/UnrealGameSync.msi" To="$(UgsInstallerPublishDir)/UnrealGameSync.msi"/>
 		</Node>
 		
-    <Node Name="Build UnrealGameSync Zip" Requires="Build UnrealGameSync">
+		<Node Name="Build UnrealGameSync Zip" Requires="Build UnrealGameSync">
 			<Zip FromDir="$(UgsPublishDir)" ZipFile="$(UgsZipPublishDir)/Ugs.zip"/>
 		</Node>
 
 		<Node Name="Publish UnrealGameSync Windows Horde" Requires="Build UnrealGameSync Zip">
 			<DeployTool Id="ugs-win" Version="$(InformationalVersion)" File="$(UgsZipPublishDir)/Ugs.zip"/>
 
-      <Zip FromDir="$(UgsInstallerPublishDir)" Files="$(UgsInstallerPublishDir)/UnrealGameSync.msi" ZipFile="$(UgsZipPublishDir)/UgsInstaller.zip"/>
+			<Zip FromDir="$(UgsInstallerPublishDir)" Files="$(UgsInstallerPublishDir)/UnrealGameSync.msi" ZipFile="$(UgsZipPublishDir)/UgsInstaller.zip"/>
 			<DeployTool Id="ugs" Version="$(InformationalVersion)" File="$(UgsZipPublishDir)/UgsInstaller.zip"/>
 		</Node>
 
-    <Node Name="Publish UnrealGameSync Installer Windows Horde" Requires="Build UnrealGameSync Installer">
-      <Zip FromDir="$(UgsInstallerPublishDir)" Files="$(UgsInstallerPublishDir)/UnrealGameSync.msi" ZipFile="$(UgsZipPublishDir)/UgsInstaller.zip"/>
+		<Node Name="Publish UnrealGameSync Installer Windows Horde" Requires="Build UnrealGameSync Installer">
+			<Zip FromDir="$(UgsInstallerPublishDir)" Files="$(UgsInstallerPublishDir)/UnrealGameSync.msi" ZipFile="$(UgsZipPublishDir)/UgsInstaller.zip"/>
 			<DeployTool Id="ugs" Version="$(InformationalVersion)" File="$(UgsZipPublishDir)/UgsInstaller.zip"/>
 		</Node>
 		
