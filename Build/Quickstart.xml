@@ -1,0 +1,127 @@
+<?xml version='1.0' ?>
+<BuildGraph xmlns="http://www.epicgames.com/BuildGraph" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.epicgames.com/BuildGraph ../Schema.xsd" >
+	<Include Script="$(RootDir)/UniversalFoundry/Support/AgentTypes.xml" />
+	<Include Script="$(RootDir)/UniversalFoundry/Support/CommonProperties.xml" />
+
+	<Option Name="UgsPcbEditorPlatform" Restrict="[^ ]+" DefaultValue="Win64" Description="Platform of the editor target to be built." />
+	<Option Name="EditorTarget" Restrict="[^ ]+" DefaultValue="UnrealEditor" Description="Name of the editor target to be built" />
+	<Option Name="TargetPlatforms" Restrict="[^ ]*" DefaultValue="$(UgsPcbEditorPlatform)" Description="List of the target platforms to build for, separated by semicolons, eg. Win64;Android" />
+	<Option Name="GameTargets" Restrict="[^ ]*" DefaultValue="" Description="Names of game targets to build separated by semicolons, eg. UnrealClient;UnrealServer"/>
+
+	<Include Script="$(RootDir)/Engine/Build/Graph/Tasks/BuildAndTestProject.xml" />
+
+	<Option Name="AdditionalTools" Restrict="[^ ]*" DefaultValue="" Description="Tool Compiles to build seperated by semicolons, eg. UnrealMultiUserServer;BuildPatchTool"/>
+	<Option Name="OutputDir" DefaultValue="$(RootDir)\LocalBuilds\$(EditorTarget)Binaries" Description ="Output directory for compiled binaries"/>
+	<Option Name="Versioned" Restrict="true|false" DefaultValue="$(IsBuildMachine)" Description="Whether to embed changelist number into binaries"/>
+	<Option Name="Promoted" Restrict="true|false" DefaultValue="true" Description="Whether to set the promoted flag in version files, allowing the editor to run without UBT."/>
+	<Option Name="ArchiveStream" Restrict="(?://.*)?" DefaultValue="" Description="Stream path that will contain zip file of the compiled binaries, for use by UnrealGameSync"/>
+	<Option Name="ForceSubmit" Restrict="true|false" DefaultValue="false" Description="Forces the submit to happen even if another change has been submitted (resolves in favor of local files)"/>
+	<Option Name="ArchiveName" Restrict="[^ ]*" DefaultValue="$(EditorTarget)" Description="Names of archive to generate instead of using the GameTarget, when the GameTarget may be UnrealEditor and result in a clash"/>
+
+	<Property Name="ArchiveDir" Value="$(RootDir)\LocalBuilds\ArchiveForUGS"/>
+	<Property Name="ArchiveStagingDir" Value="$(ArchiveDir)\Staging"/>
+	<Property Name="ArchiveStagingRelativeDir" Value="LocalBuilds\ArchiveForUGS\Staging"/>
+	
+	<Property Name="ToolCompileArgs" Value="$(GenericCompileArguments) $(ExtraToolCompileArguments)" />
+	<Property Name="EditorCompileArgs" Value="$(GenericCompileArguments) $(ExtraEditorCompileArguments)" />
+	<Property Name="TargetCompileArgs" Value="$(GenericCompileArguments) $(ExtraTargetCompileArguments)" />
+
+	<Agent Name="Compile UgsPcb" Type="$(CompileAgentType)">
+		<Node Name="UgsPcb Update Version Files $(UgsPcbEditorPlatform)">
+			<SetVersion Change="$(Change)" CompatibleChange="$(CodeChange)" Branch="$(EscapedBranch)" If="$(Versioned) and $(IsBuildMachine)"/>
+		</Node>
+
+		<!-- Compile the tool executables -->
+		<Node Name="UgsPcb Compile Tools $(UgsPcbEditorPlatform)" Requires="UgsPcb Update Version Files $(UgsPcbEditorPlatform)" Produces="#ToolBinaries">
+			<Compile Target="ShaderCompileWorker" Platform="Win64" Configuration="Development" Tag="#ToolBinaries" Arguments="$(ToolCompileArgs)"/>
+			<Compile Target="UnrealLightmass" Platform="Win64" Configuration="Development" Tag="#ToolBinaries" Arguments="$(ToolCompileArgs)"/>
+			<Compile Target="InterchangeWorker" Platform="Win64" Configuration="Development" Tag="#ToolBinaries" Arguments="$(ToolCompileArgs)"/>
+			<Compile Target="UnrealPak" Configuration="Development" Platform="Win64" Tag="#ToolBinaries" Arguments="$(ToolCompileArgs)"/>
+			<ForEach Name="AdditionalTool" Values="$(AdditionalTools)">
+				<Compile Target="$(AdditionalTool)" Platform="Win64" Configuration="Development" Tag="#ToolBinaries" Arguments="$(ToolCompileArgs)"/>
+			</ForEach>
+			
+			<Tag Files="$(RootDir)\Engine\Binaries\Win64\XGEControlWorker.exe" With="#ToolBinaries"/>
+		</Node>
+		
+		<!-- Compile the editor executable -->
+		<Node Name="UgsPcb Compile $(EditorTarget) Win64" Produces="#EditorBinaries;#TargetInfo">
+			<Compile Target="$(EditorTarget)" Platform="Win64" Configuration="Development" Project="$(ProjectFile)" Tag="#EditorBinaries" Arguments="$(EditorCompileArgs)" />
+			<QueryTargets ProjectFile="$(ProjectFile)" Tag="#TargetInfo"/>
+		</Node>
+		
+		<!-- Compile the game targets -->
+		<Property Name="GameBinaries" Value="" />
+		<ForEach Name="GameTarget" Values="$(GameTargets)">
+			<ForEach Name="TargetPlatform" Values="$(TargetPlatforms)">
+				<Node Name="UgsPcb Compile $(GameTarget) $(TargetPlatform)" Requires="UgsPcb Compile $(EditorTarget) Win64" Produces="#GameBinaries_$(GameTarget)_$(TargetPlatform)">
+					<Compile Target="$(GameTarget)" Platform="$(TargetPlatform)" Configuration="Development" Arguments="$(TargetCompileArgs)" Tag="#GameBinaries_$(GameTarget)_$(TargetPlatform)"/>
+					<Compile Target="$(GameTarget)" Platform="$(TargetPlatform)" Configuration="Shipping" Arguments="$(TargetCompileArgs)" Tag="#GameBinaries_$(GameTarget)_$(TargetPlatform)"/>
+				</Node>
+				<Property Name="GameBinaries" Value="$(GameBinaries)#GameBinaries_$(GameTarget)_$(TargetPlatform);"/>
+			</ForEach>
+		</ForEach>
+		
+		<!-- Copy all the files to the output directory -->
+		<Node Name="Tag Output Files" Requires="#ToolBinaries;#EditorBinaries;#TargetInfo;$(GameBinaries)" Produces="#OutputFiles">
+			<Tag Files="#ToolBinaries;#EditorBinaries;$(GameBinaries)" Except=".../Intermediate/..." With="#OutputFiles"/>
+			<Tag Files="#TargetInfo" With="#OutputFiles"/>
+		</Node>
+
+		<!-- Copy all the files to the output directory -->
+		<Node Name="Copy To Staging Directory" Requires="#OutputFiles">
+			<Delete Files="$(OutputDir)/..."/>
+			<Copy Files="#OutputFiles" From="$(RootDir)" To="$(OutputDir)"/>
+		</Node>
+
+		<!-- Dependencies required for submitting binaries -->
+		<Property Name="SubmissionDependencies" Value="#OutputFiles" />
+
+		<!-- Prepare a build for UGS -->
+		<Node Name="Stage for UGS" Requires="$(SubmissionDependencies)" Produces="#PublishBinaries">
+			<!-- Clear out the staging directory -->
+			<Delete Files="$(ArchiveDir)/..."/>
+
+			<!-- Tag AutomationTool build folder recursively -->
+			<Tag Files="Engine/Binaries/DotNET/AutomationTool/..." With="#ArchiveBinaries"/>
+			
+			<!-- Write a text file marker indicating that we're using precompiled binaries -->
+			<Spawn Exe="cmd.exe" Arguments="/C echo. &gt;&quot;$(RootDir)/Engine/Build/PrecompiledBinaries.txt&quot;"/>
+			<Tag Files="$(RootDir)/Engine/Build/PrecompiledBinaries.txt" With="#ArchiveFiles"/>
+
+			<!-- Partition all the binaries and symbols -->
+			<Tag Files="#OutputFiles" Except=".../Intermediate/..." With="#ArchiveFiles"/>
+			<Tag Files="#ArchiveFiles" Except="*.pdb" With="#ArchiveBinaries"/>
+			<Tag Files="#ArchiveFiles" Filter="*.pdb" With="#ArchiveSymbols"/>
+
+			<!-- List all the files being archived -->
+			<Log Message="Archive binaries:" Files="#ArchiveBinaries"/>
+			<Log Message="Archive symbols:" Files="#ArchiveSymbols"/>
+
+			<!-- Stage all the files to be archived -->
+			<Copy Files="#ArchiveBinaries" From="$(RootDir)" To="$(ArchiveStagingDir)"/>
+			<Strip Files="#ArchiveSymbols" BaseDir="$(RootDir)" OutputDir="$(ArchiveStagingDir)" Platform="Win64"/>
+			<Tag Files="$(ArchiveStagingDir)/..." With="#PublishBinaries"/>
+		</Node>
+
+		<!-- Upload binaries to Horde -->
+		<Property Name="UgsProjectKey" Value=""/>
+		<Property Name="UgsProjectKey" Value="ugs-project=$(Branch)/$(ProjectFile)" If="'$(Branch)' != '' and '$(ProjectFile)' != ''"/>
+		<Property Name="UgsProjectKey" Value="ugs-project=$(Branch)" If="'$(Branch)' != '' and '$(UgsProjectKey)' == ''"/>
+		<Artifact Name="editor" Description="Editor PCBs" Type="ugs-pcb" BasePath="$(ArchiveStagingRelativeDir)" Keys="$(UgsProjectKey)" Metadata="ArchiveType=Editor" Tag="#PublishBinaries"/>
+	</Agent>
+
+	<Label Category="Editors" Name="Win64" Requires="UgsPcb Compile $(EditorTarget) Win64" UgsBadge="Editor"/>
+
+	<ForEach Name="TargetPlatform" Values="$(TargetPlatforms)">
+		<Property Name="GameTargetNodes" Value=""/>	
+		<ForEach Name="GameTarget" Values="$(GameTargets)">
+			<Property Name="GameTargetNodes" Value="$(GameTargetNodes)UgsPcb Compile $(GameTarget) $(TargetPlatform);"/>
+		</ForEach>
+		<Do If="'$(GameTargetNodes)' != ''">
+			<Label Category="Target Platforms" Name="$(TargetPlatform)" Requires="$(GameTargetNodes)" UgsBadge="$(TargetPlatform)"/>
+		</Do>
+	</ForEach>
+
+	<Aggregate Name="Submit UGS PCBs to Horde" Requires="Stage for UGS"/>
+</BuildGraph>
