@@ -1,12 +1,12 @@
 <?xml version='1.0' ?>
 <BuildGraph xmlns="http://www.epicgames.com/BuildGraph" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.epicgames.com/BuildGraph ../Schema.xsd" >
 	<Option Name="UfCompileArguments" DefaultValue="" Description="Arguments defined by Universal Foundry to pass to compiles." />
-	<Option Name="GenericCompileArguments" DefaultValue="" Restrict="" Description="Configurable compile args applied to all compile targets."/>
+	<Option Name="GenericCompileArguments" DefaultValue="" Description="Configurable compile args applied to all compile targets."/>
 
 	<Property Name="GenericCompileArguments" Value="$(UfCompileArguments) $(GenericCompileArguments)" />
 
 	<Option Name="UfExtraCookArguments" DefaultValue="" Description="Arguments defined by Universal Foundry to pass to cooks." />
-	<Option Name="ExtraCookArguments" DefaultValue="" Restrict="" Description="Configurable cook args applied to all cooks."/>
+	<Option Name="ExtraCookArguments" DefaultValue="" Description="Configurable cook args applied to all cooks."/>
 
 	<Property Name="ExtraCookArguments" Value="$(UfExtraCookArguments) $(ExtraCookArguments)" />
 </BuildGraph>
