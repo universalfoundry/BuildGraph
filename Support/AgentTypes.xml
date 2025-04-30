@@ -24,7 +24,6 @@
 	<Property Name="CookAgentType" Value="$(AgentOverride)" If="'$(AgentOverride)' != ''" />
 
 	<Property Name="PackageAgentType" Value="$(AgentPrefixPackage)$(HostAgentType)" />
-	<Property Name="PackageAgentType" Value="Incremental$(PackageAgentType)" If="$(UseIncrementalAgents)" />
 	<Property Name="PackageAgentType" Value="$(AgentOverride)" If="'$(AgentOverride)' != ''" />
 
 	<!-- Test agents don't have an incremental version, they are expected to pull builds, not create them -->
