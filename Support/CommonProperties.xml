@@ -1,0 +1,20 @@
+<?xml version='1.0' ?>
+<BuildGraph xmlns="http://www.epicgames.com/BuildGraph" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.epicgames.com/BuildGraph ../Schema.xsd" >
+	
+	<!-- UfCompileArguments are set by Universal Foundry via Horde to optimize compiles for our agents. -->
+	<Option Name="UfCompileArguments" DefaultValue="" Description="Arguments defined by Universal Foundry to pass to compiles." />
+	<!-- GenericCompileArguments can be used to set any other compile arguments needed. -->
+	<Option Name="GenericCompileArguments" DefaultValue="" Description="Configurable compile args applied to all compile targets."/>
+
+	<!-- Combines UfCompileArguments and GenericCompileArguments for use by later BuildGraph. -->
+	<Property Name="GenericCompileArguments" Value="$(UfCompileArguments) $(GenericCompileArguments)" />
+
+	<!-- UfExtraCookArguments are set by Universal Foundry via Horde to optimize cooks for our agents. -->
+	<Option Name="UfExtraCookArguments" DefaultValue="" Description="Arguments defined by Universal Foundry to pass to cooks." />
+	<!-- ExtraCookArguments can be used to set any other cook arguments needed. -->
+	<Option Name="ExtraCookArguments" DefaultValue="" Description="Configurable cook args applied to all cooks."/>
+
+	<!-- Combines UfExtraCookArguments and ExtraCookArguments for use by later BuildGraph. -->
+	<Property Name="ExtraCookArguments" Value="$(UfExtraCookArguments) $(ExtraCookArguments)" />
+	
+</BuildGraph>
