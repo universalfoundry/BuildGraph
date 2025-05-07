@@ -30,12 +30,12 @@
 
 	<!-- We assume that DefaultEditorPlatforms will only contain one platform when using UGS PCBs nodes-->
 	<Agent Name="Compile UGS PCBs" Type="$(CompileAgentType)">
-		<Node Name="UGS PCBs Update Version Files $(DefaultEditorPlatforms)">
+		<Node Name="Update Version Files $(DefaultEditorPlatforms)">
 			<SetVersion Change="$(Change)" CompatibleChange="$(CodeChange)" Branch="$(EscapedBranch)" If="$(Versioned) and $(IsBuildMachine)"/>
 		</Node>
 
 		<!-- Compile the tool executables -->
-		<Node Name="UGS PCBs Compile Tools $(DefaultEditorPlatforms)" Requires="UGS PCBs Update Version Files $(DefaultEditorPlatforms)" Produces="#ToolBinaries">
+		<Node Name="Compile Tools $(DefaultEditorPlatforms)" Requires="Update Version Files $(DefaultEditorPlatforms)" Produces="#ToolBinaries">
 			<Compile Target="ShaderCompileWorker" Platform="Win64" Configuration="Development" Tag="#ToolBinaries" Arguments="$(ToolCompileArgs)"/>
 			<Compile Target="UnrealLightmass" Platform="Win64" Configuration="Development" Tag="#ToolBinaries" Arguments="$(ToolCompileArgs)"/>
 			<Compile Target="InterchangeWorker" Platform="Win64" Configuration="Development" Tag="#ToolBinaries" Arguments="$(ToolCompileArgs)"/>
@@ -48,7 +48,7 @@
 		</Node>
 		
 		<!-- Compile the editor executable -->
-		<Node Name="UGS PCBs Compile $(EditorTargetName) Win64" Produces="#EditorBinaries;#TargetInfo">
+		<Node Name="Compile $(EditorTargetName) Win64" Produces="#EditorBinaries;#TargetInfo">
 			<Compile Target="$(EditorTargetName)" Platform="Win64" Configuration="Development" Project="$(ProjectFile)" Tag="#EditorBinaries" Arguments="$(EditorCompileArgs)" />
 			<QueryTargets ProjectFile="$(ProjectFile)" Tag="#TargetInfo"/>
 		</Node>
@@ -57,7 +57,7 @@
 		<Property Name="GameBinaries" Value="" />
 		<ForEach Name="GameTarget" Values="$(GameTargets)">
 			<ForEach Name="TargetPlatform" Values="$(TargetPlatforms)">
-				<Node Name="UGS PCBs Compile $(GameTarget) $(TargetPlatform)" Requires="UGS PCBs Compile $(EditorTargetName) Win64" Produces="#GameBinaries_$(GameTarget)_$(TargetPlatform)">
+				<Node Name="Compile $(GameTarget) $(TargetPlatform)" Requires="Compile $(EditorTargetName) Win64" Produces="#GameBinaries_$(GameTarget)_$(TargetPlatform)">
 					<Compile Target="$(GameTarget)" Platform="$(TargetPlatform)" Configuration="Development" Arguments="$(TargetCompileArgs)" Tag="#GameBinaries_$(GameTarget)_$(TargetPlatform)"/>
 				</Node>
 				<Property Name="GameBinaries" Value="$(GameBinaries)#GameBinaries_$(GameTarget)_$(TargetPlatform);"/>
@@ -113,13 +113,13 @@
 		<Artifact Name="editor" Description="Editor PCBs" Type="ugs-pcb" If="$(SubmitUGSPCBsToHorde)" BasePath="$(ArchiveStagingRelativeDir)" Keys="$(UgsProjectKey)" Metadata="ArchiveType=Editor" Tag="#PublishBinaries"/>
 	</Agent>
 
-	<Label Category="Editors" Name="Win64" Requires="UGS PCBs Compile $(EditorTargetName) Win64" UgsBadge="Editor"/>
+	<Label Category="Editors" Name="Win64" Requires="Compile $(EditorTargetName) Win64" UgsBadge="Editor"/>
 
 	<!-- Construct the labels for the Platforms column of the Horde UI -->
 	<ForEach Name="TargetPlatform" Values="$(TargetPlatforms)">
 		<Property Name="GameTargetNodes" Value=""/>
 		<ForEach Name="GameTarget" Values="$(GameTargets)">
-			<Property Name="GameTargetNodes" Value="$(GameTargetNodes)UGS PCBs Compile $(GameTarget) $(TargetPlatform);"/>
+			<Property Name="GameTargetNodes" Value="$(GameTargetNodes) Compile $(GameTarget) $(TargetPlatform);"/>
 		</ForEach>
 		<Do If="'$(GameTargetNodes)' != ''">
 			<Label Category="Platforms" Name="$(TargetPlatform)" Requires="$(GameTargetNodes)" UgsBadge="$(TargetPlatform)"/>
@@ -127,5 +127,5 @@
 	</ForEach>
 
 	<!-- Create an Aggregate to make it clear what the main entrypoints are to this BuildGraph -->
-	<Aggregate Name="Build UGS PCBs for Horde" Requires="Stage for UGS"/>
+	<Aggregate Name="Build PCBs for UGS" Requires="Stage for UGS"/>
 </BuildGraph>
