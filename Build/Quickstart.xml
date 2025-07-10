@@ -5,6 +5,10 @@
 	<Include Script="$(RootDir)/UniversalFoundry/Support/AgentTypes.xml" />
 	<Include Script="$(RootDir)/UniversalFoundry/Support/CommonProperties.xml" />
 
+	<!-- Set backward-compatible defaults to keep builds consistent between 5.5 and 5.6 -->
+	<Option Name="PublishHordeArtifacts" DefaultValue="true" Restrict="true|false" Description="Enable to publish horde artifacts"/>
+	<Option Name="UseNetworkShare" DefaultValue="false" Restrict="false" Description="Disable using the network share when building at Universal Foundry."/>
+
 	<!-- Include Epic's standard build and test graph -->
 	<Include Script="$(RootDir)/Engine/Build/Graph/Tasks/BuildAndTestProject.xml" />
 
