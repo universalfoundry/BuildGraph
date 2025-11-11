@@ -1,6 +1,6 @@
 # Universal Foundry BuildGraph
 
-Supporting BuildGraph to use with the Universal Foundry platform.
+Supporting BuildGraph to use with the [Universal Foundry](https://universalfoundry.io) Horde platform.
 
 ## Usage
 
